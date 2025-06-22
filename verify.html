@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full max-w-md text-center">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h1 class="text-2xl font-bold mb-4">Check Your Email</h1>
+            <p class="mb-6 text-gray-600">We've sent a verification code to your email. Enter it below to activate your account.</p>
+            <form action="auth/verify.php" method="post">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="email" name="email" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="code">Verification Code</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="code" type="text" name="code" required>
+                </div>
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" type="submit">Verify Account</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const email = new URLSearchParams(window.location.search).get('email');
+            if (email) document.getElementById('email').value = decodeURIComponent(email);
+        });
+    </script>
+</body>
+</html>
