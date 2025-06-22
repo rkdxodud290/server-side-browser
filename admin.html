@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+            <a href="index.php" class="text-blue-500 hover:text-blue-700">&larr; Back to App</a>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Pending Upgrade Requests</h2>
+            <div id="pending-upgrades" class="overflow-x-auto">
+                <p>Loading...</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Pending New Account Approvals</h2>
+            <div id="pending-users" class="overflow-x-auto"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchPendingUsers();
+            fetchUpgradeRequests();
+        });
+
+        function fetchPendingUsers() {
+             fetch('auth/admin_actions.php?action=get_pending')
+                .then(response => response.json()).then(data => {
+                    if (data.error) {
+                        document.getElementById('pending-users').innerHTML = `<p class="text-red-500">${data.error}</p>`;
+                        if (data.action === 'redirect') window.location.href = 'login.html';
+                        return;
+                    }
+                    renderUsers(data, 'pending-users', 'new-user-row', 'Approve Free', 'free_user', 'Approve Paid', 'paid_user');
+                });
+        }
+        
+        function fetchUpgradeRequests() {
+            fetch('auth/admin_actions.php?action=get_upgrade_requests')
+                .then(response => response.json()).then(data => {
+                    if (data.error) {
+                        document.getElementById('pending-upgrades').innerHTML = `<p class="text-red-500">${data.error}</p>`;
+                        return;
+                    }
+                    renderUsers(data, 'pending-upgrades', 'upgrade-row', 'Approve Upgrade', 'paid_user', 'Deny Request', 'free_user');
+                });
+        }
+
+        function renderUsers(users, containerId, rowIdPrefix, primaryActionText, primaryActionLevel, secondaryActionText, secondaryActionLevel) {
+            const container = document.getElementById(containerId);
+            if (users.length === 0) {
+                container.innerHTML = '<p>No requests found.</p>';
+                return;
+            }
+            container.innerHTML = `
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200"><tr><th class="py-2 px-4 text-left">Email</th><th class="py-2 px-4 text-left">Date</th><th class="py-2 px-4 text-left">Actions</th></tr></thead>
+                    <tbody>${users.map(user => `<tr class="border-b" id="${rowIdPrefix}-${user.id}">
+                        <td class="py-2 px-4">${user.email}</td><td class="py-2 px-4">${user.reg_date}</td>
+                        <td class="py-2 px-4">
+                            <button onclick="updateUser(${user.id}, '${primaryActionLevel}', '${rowIdPrefix}-${user.id}')" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">${primaryActionText}</button>
+                            <button onclick="updateUser(${user.id}, '${secondaryActionLevel}', '${rowIdPrefix}-${user.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">${secondaryActionText}</button>
+                            <button onclick="updateUser(${user.id}, 'banned', '${rowIdPrefix}-${user.id}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Ban</button>
+                        </td></tr>`).join('')}
+                    </tbody></table>`;
+        }
+
+        function updateUser(userId, newLevel, rowElementId) {
+            if (!confirm(`Are you sure you want to set this user's level to ${newLevel}?`)) return;
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('new_level', newLevel);
+
+            fetch('auth/admin_actions.php?action=update_level', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User updated!');
+                        document.getElementById(rowElementId).remove();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
